@@ -34,7 +34,8 @@ on early-init
     mkdir /dsp 0771 media media
 
 on fs
-    wait /dev/block/bootdevice
+    wait /dev/block/platform/soc/${ro.boot.bootdevice}
+    symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
     mount_all fstab.qcom
     write /proc/sys/vm/swappiness 100
 
@@ -52,8 +53,12 @@ on post-fs-data
     mkdir /data/misc/hbtp 0750 system system
     mkdir /data/misc/dts 0770 media audio
 
+    # Create directory for TZ Apps
+    mkdir /data/fpc_images 0770 system system
+    chmod 0770 /data/fpc_images
+
 #start camera server as daemon
-service qcamerasvr /system/bin/mm-qcamera-daemon
+service qcamerasvr /vendor/bin/mm-qcamera-daemon
     class late_start
     user camera
     group camera system inet input graphics
@@ -63,7 +68,7 @@ on init
    write /sys/class/android_usb/android0/f_rndis/manufacturer bq
    write /sys/class/android_usb/android0/f_rndis/vendorID 2A47
    write /sys/class/android_usb/android0/iManufacturer bq
-   write /sys/class/android_usb/android0/iProduct "Aquaris U"
+   write /sys/class/android_usb/android0/iProduct "Aquaris U Lite"
 
 # Allow usb charging to be disabled peristently
 on property:persist.usb.chgdisabled=1
@@ -72,7 +77,7 @@ on property:persist.usb.chgdisabled=1
 on property:persist.usb.chgdisabled=0
     write /sys/class/power_supply/battery/charging_enabled 1
 
-service qseecomd /system/bin/qseecomd
+service qseecomd /vendor/bin/qseecomd
    class core
    user root
    group root
@@ -85,11 +90,6 @@ service thermal-engine /system/vendor/bin/thermal-engine
    socket thermal-recv-passive-client stream 0666 system system
    group root
 
-service audiod /system/bin/audiod
-   class late_start
-   user system
-   group system
-
 on boot
     start rmt_storage
     # access permission for secure touch
@@ -101,6 +101,10 @@ on boot
     chown system drmrpc /sys/devices/soc.0/78b7000.i2c/i2c-3/3-0020/input/input0/secure_touch
     chown system drmrpc /sys/devices/soc.0/78b8000.i2c/i2c-4/4-0020/input/input0/secure_touch_enable
     chown system drmrpc /sys/devices/soc.0/78b8000.i2c/i2c-4/4-0020/input/input0/secure_touch
+
+    chown system system /sys/devices/soc/78b7000.i2c/i2c-3/3-005f/irq
+    chown system system /sys/devices/soc/78b7000.i2c/i2c-3/3-005f/clk_enable
+    chown system system /sys/devices/soc/78b7000.i2c/i2c-3/3-005f/wakeup_enable
 
     # Double Tap to Wake
     chown root system /sys/android_touch/wakeup_gesture_enable
@@ -125,6 +129,9 @@ on boot
     chown system system /sys/class/leds/red/led_time
     chown system system /sys/class/leds/blue/led_time
     chown system system /sys/class/leds/green/led_time
+
+    # WiFi Firmware Reload Path
+    chown wifi wifi /sys/module/wlan/parameters/fwpath
 
 service ppd /system/vendor/bin/mm-pp-dpps
     class late_start
@@ -151,7 +158,7 @@ on property:init.svc.zygote=running
 on property:init.svc.zygote=restarting
     stop ppd
 
-service wcnss-service /system/bin/wcnss_service
+service wcnss-service /vendor/bin/wcnss_service
     class main
     user system
     group system wifi radio
@@ -172,12 +179,12 @@ service hbtp /system/vendor/bin/hbtp_daemon
     group system
     disabled
 
-service adsprpcd /system/bin/adsprpcd
+service adsprpcd /vendor/bin/adsprpcd
     class main
     user media
     group media
 
-service per_mgr /system/bin/pm-service
+service per_mgr /vendor/bin/pm-service
     class core
     user system
     group system net_raw
@@ -203,6 +210,11 @@ service mdtpd /system/vendor/bin/mdtpd
     class late_start
     user root
     group system radio drmrpc
+
+service fingerprintd /system/bin/fingerprintd
+    class late_start
+    user system
+    group system
 
 service msm_irqbalance /system/bin/msm_irqbalance -f /system/vendor/etc/msm_irqbalance.conf
     class core
