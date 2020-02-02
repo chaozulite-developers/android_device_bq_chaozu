@@ -23,7 +23,7 @@ DEVICE_PATH := device/bq/chaozu
 TARGET_OTA_ASSERT_DEVICE := Aquaris_U,chaozu
 
 # Kernel
-TARGET_KERNEL_CONFIG := lineage_chaozu_defconfig
+TARGET_KERNEL_CONFIG := chaozu_defconfig
 
 # Bluetooth
 BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := $(DEVICE_PATH)/bluetooth
